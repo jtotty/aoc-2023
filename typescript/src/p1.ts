@@ -12,15 +12,14 @@ const NUMBERS_DICT = new Map([
     ['nine', 9],
 ]);
 
-function main() {
-    const data = fs.readFileSync('../../data/data.txt', 'utf8');
+function run(filePath: string) {
+    const data = fs.readFileSync(filePath, 'utf8');
     const values = getCalibrationValues(data);
     const sum = sumCalibrationValues(values);
-
     console.log(sum);
 }
 
-main();
+run('../../data/p1/data.txt');
 
 function getCalibrationValues(input: string): number[] {
     const lines = input.split('\n');
