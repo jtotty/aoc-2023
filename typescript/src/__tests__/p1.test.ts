@@ -1,4 +1,5 @@
-import { determineTwoDigitValue, matchNumbers, sumCalibrationValues } from "../p1";
+import { determineTwoDigitValue, matchNumbers } from "../p1";
+import { sumValues } from "../utils";
 
 const testInput = `dfdfj1
 eighthree
@@ -27,7 +28,7 @@ const testNumsSingleDigits = [
 const testNumsDoubleDigits = [11, 83, 79, 29, 83, 13, 24, 42, 14, 76];
 
 test('sums correct value', () => {
-    const sum = sumCalibrationValues(testNumsDoubleDigits);
+    const sum = sumValues(testNumsDoubleDigits);
     expect(sum).toEqual(454);
 });
 

@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { sumValues } from './utils';
 
 const NUMBERS_DICT = new Map([
     ['one', 1],
@@ -15,7 +16,7 @@ const NUMBERS_DICT = new Map([
 function run(filePath: string) {
     const data = fs.readFileSync(filePath, 'utf8');
     const values = getCalibrationValues(data);
-    const sum = sumCalibrationValues(values);
+    const sum = sumValues(values);
     console.log(sum);
 }
 
@@ -77,8 +78,4 @@ export function determineTwoDigitValue(numbers: number[]): number {
     }
 
     return 0;
-}
-
-export function sumCalibrationValues(values: number[]): number {
-    return values.reduce((acc, value) => acc + value, 0);
 }
