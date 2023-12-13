@@ -3,8 +3,8 @@ import fs from 'fs';
 function run(fileType: string) {
     const data = fs.readFileSync(fileType, 'utf-8').trim().split('\n');
 
-    // const total01 = parseDataPart1(data);
-    // console.log(total01);
+    const total01 = parseDataPart1(data);
+    console.log(total01);
 
     const tick02 = performance.now();
     const total02 = parseDataPart2(data);
