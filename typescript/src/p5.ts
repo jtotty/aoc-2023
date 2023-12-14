@@ -1,141 +1,73 @@
 import fs from 'fs';
 
-type Almanac = {
-    [key: string]: Record<'drs'|'srt'|'rl', number>[],
+type SeedMap = {
+    from: string,
+    to: string,
+    map: {
+        dest: number,
+        src: number,
+        range: number,
+    }[],
 };
 
+type Almanac = Record<string, SeedMap>;
+
+let almanac: Almanac;
+
 function run(filePath: string) {
-    const data = fs.readFileSync(filePath, 'utf-8').trim();
+    const contents = fs.readFileSync(filePath, 'utf-8').trim().split('\n\n');
+    const seeds = contents.shift()?.split(': ')[1].split(' ').map(x => +x);
 
-    let [seeds, almanac] = parseData(data);
+    almanac = contents.map(parseMap).reduce((acc, x) => {
+        acc[x.from] = x;
+        return acc;
+    }, {} as Almanac);
 
-    // const tick01 = performance.now();
-    // const lowestLocation01 = findLowestLocation(seeds, almanac);
-    // console.log(`Took: ${performance.now() - tick01} ms`);
-    // console.log(lowestLocation01);
+    const tick01 = performance.now();
 
-    const seedRanges = findSeedRanges(seeds);
-    console.log(seedRanges);
-
-    const tick02 = performance.now();
-
-    let lowestLocation02 = -1;
-    seedRanges.forEach((seedRange) => {
-        for (let i = seedRange.start; i <= seedRange.start + seedRange.range; i++) {
-            const loc = findLocation(i, almanac);
-
-            if (lowestLocation02 === -1) {
-                lowestLocation02 = loc;
-            } else {
-                lowestLocation02 = loc < lowestLocation02 ? loc : lowestLocation02;
-            }
-        }
-    });
-
-    console.log(`Took: ${performance.now() - tick02} ms`);
-    console.log(lowestLocation02);
-}
-
-function parseData(data: string): [number[], Almanac] {
-    const parts = data.split('\n\n');
-    const almanac: Almanac = {};
-
-    const seeds = parts[0].split(': ')[1].match(/\d+/g)?.map((num) => Number(num)) || [];
-
-    for (let i = 1; i < parts.length; i++) {
-        let [key, map] = parts[i].split(':\n');
-        const mapRows = map.split('\n');
-
-        key = key.replace(' map', '');
-        almanac[key] = [];
-
-        mapRows.forEach((row) => {
-            const values = row.split(' ');
-            almanac[key].push({
-                'drs': Number(values[0]),
-                'srt': Number(values[1]),
-                'rl': Number(values[2]),
-            });
-        });
-    }
-
-    return [seeds, almanac];
-}
-
-function findLowestLocation(seeds: number[], almanac: Almanac): number {
-    let lowestLocation: number | undefined;
-
-    seeds.forEach((seed) => {
-        let currMapVal = seed;
-
-        for (let [key, maps] of Object.entries(almanac)) {
-            let mapFound = false;
-
-            for (let map of maps) {
-                if (mapFound) break;
-                if (map.srt <= currMapVal && map.srt + map.rl >= currMapVal) {
-                    const offset = map.srt - map.drs;
-                    currMapVal -= offset;
-                    mapFound = true;
-                }
-            }
-
-            if (key === 'humidity-to-location') {
-                if (lowestLocation === undefined) {
-                    lowestLocation = currMapVal;
-                } else {
-                    lowestLocation = currMapVal < lowestLocation ? currMapVal : lowestLocation;
-                }
-            }
-        }
-    });
-
-    return lowestLocation || -1;
-}
-
-function findLocation(seed: number, almanac: Almanac ): number {
-    let currMapVal = seed;
-
-    for (let [key, maps] of Object.entries(almanac)) {
-        let mapFound = false;
-
-        for (let map of maps) {
-            if (mapFound) break;
-            if (map.srt <= currMapVal && map.srt + map.rl >= currMapVal) {
-                const offset = map.srt - map.drs;
-                currMapVal -= offset;
-                mapFound = true;
-            }
-        }
-
-        if (key === 'humidity-to-location') {
-            return currMapVal;
+    const locs = [];
+    if (seeds) {
+        for (const seed of seeds) {
+            locs.push(findLocation(seed, 'seed'));
         }
     }
 
-    return currMapVal;
+    const lowestVal = locs.sort((a, b) => a - b)[0];
+
+    console.log(`Took: ${performance.now() - tick01} ms`);
+    console.log(lowestVal);
 }
 
-function findSeedRanges(seeds: number[]) {
-    let parsed: Record<string, number>[] = [];
-    let start = -1;
-    let range = -1;
+function createRange(line: string) {
+    const items = line.split(' ');
 
-    for (let i = 0; i < seeds.length; i++) {
-        if (i % 2 === 0) {
-            start = seeds[i];
-        } else {
-            range = seeds[i];
-        }
+    return {
+        dest: +items[0],
+        src: +items[1],
+        range: +items[2],
+    };
+}
 
-        if (start > -1 && range > -1) {
-            parsed.push({ start, range });
-            start = -1;
-            range = -1;
-        }
+function parseMap(data: string): SeedMap {
+    const contents = data.split('\n');
+    const [from, _, to] = contents.shift()?.split(' ')[0].split('-') as string[];
+    return { from, to, map: contents.map(createRange) }
+}
+
+function findLocation(value: number, name: string) {
+    if (name === 'location') {
+        return value;
     }
 
-    return parsed;
+    const currMap = almanac[name];
+    const range = currMap.map.find(x => x.src <= value && x.src + x.range >= value);
+
+    if (range) {
+        const newValue = value - (range.src - range.dest);
+        return findLocation(newValue, currMap.to);
+    }
+
+    return findLocation(value, currMap.to);
 }
 
-run('../data/p5/test.txt');
+run('../data/p5/data.txt');
