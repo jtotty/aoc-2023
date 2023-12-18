@@ -13,7 +13,7 @@ function run(filePath: string) {
 
     let answer = 1;
     for (const race of races) {
-        answer *= numWaysToBeat(race);
+        answer *= numWaysToBeatQuadratic(race);
     }
 
     console.log(`Time: ${performance.now() - tick} ms`);
@@ -53,6 +53,28 @@ function numWaysToBeat(race: Race): number {
     }
 
     return beatenCount;
+}
+
+/**
+ * Using the Quadratic formula to solve d = (t - x) * x
+ * rather than iterating through all possible button press durations.
+ */
+function numWaysToBeatQuadratic(race: Race): number {
+    const numToSqrt = Math.pow(race.time, 2) - 4 * 1 * race.distance;
+    let lowerLimit = race.time / 2 - Math.sqrt(numToSqrt) / 2;
+    let upperLimit = race.time / 2 + Math.sqrt(numToSqrt) / 2;
+
+    if (lowerLimit % 2 === 0) {
+        lowerLimit++;
+    } else {
+        lowerLimit = Math.ceil(lowerLimit);
+    }
+
+    if (upperLimit % 2 !== 0) {
+        upperLimit = Math.ceil(upperLimit);
+    }
+
+    return upperLimit - lowerLimit;
 }
 
 run('../data/p6/data.txt');
