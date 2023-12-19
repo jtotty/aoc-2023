@@ -6,29 +6,29 @@ const labels = {
     'A': 'm',
     'K': 'l',
     'Q': 'k',
-    'J': 'j',
-    'T': 'i',
-    '9': 'h',
-    '8': 'g',
-    '7': 'f',
-    '6': 'e',
-    '5': 'd',
-    '4': 'c',
-    '3': 'b',
-    '2': 'a',
+    'T': 'j',
+    '9': 'i',
+    '8': 'h',
+    '7': 'g',
+    '6': 'f',
+    '5': 'e',
+    '4': 'd',
+    '3': 'c',
+    '2': 'b',
+    'J': 'a',
 } as const;
 
 type LabelKey = keyof typeof labels;
 
-const combos = {
-    'fiveOfAKind': 6,
-    'fourOfAKind': 5,
-    'fullHouse': 4,
-    'threeOfAKind': 3,
-    'twoPairs': 2,
-    'onePair': 1,
-    'highCard': 0,
-} as const;
+enum Plays {
+    'highCard',
+    'onePair',
+    'twoPairs',
+    'threeOfAKind',
+    'fullHouse',
+    'fourOfAKind',
+    'fiveOfAKind',
+}
 
 const handCache = new Map<string, number>();
 
@@ -41,6 +41,7 @@ function run(filePath: string) {
     const totalWinnings = calculateTotalWinnings(sortedHands);
     console.log(`Time: ${performance.now() - tick} ms`);
     console.log(`Total Winnings: ${totalWinnings}`);
+
 }
 
 function parseHands(data: string[]): Hand[] {
@@ -71,32 +72,65 @@ function determineHandScore(hand: string): number {
 
     switch (uniqueHands.size) {
         case 1:
-            score = combos['fiveOfAKind'];
+            score = Plays.fiveOfAKind;
             break;
         case 2:
             score = countLabels(hand).includes(4)
-                ? combos['fourOfAKind']
-                : combos['fullHouse'];
+                ? Plays.fourOfAKind
+                : Plays.fullHouse;
             break;
         case 3:
             score = countLabels(hand).includes(2)
-                ? combos['twoPairs']
-                : combos['threeOfAKind'];
+                ? Plays.twoPairs
+                : Plays.threeOfAKind;
             break;
         case 4:
-            score = combos['onePair'];
+            score = Plays.onePair;
             break;
         case 5:
-            score = combos['highCard'];
+            score = Plays.highCard;
             break;
         default:
             break;
+    }
+
+    if (hand.includes('J')) {
+        score = parseJokers(hand, score);
     }
 
     handCache.set(hand, score);
 
     return score;
 };
+
+function parseJokers(hand: string, score: number): number {
+    if (score === Plays.fiveOfAKind || score === Plays.fourOfAKind || score === Plays.fullHouse) {
+        return Plays.fiveOfAKind;
+    }
+
+    if (score === Plays.threeOfAKind) {
+        return Plays.fourOfAKind;
+    }
+
+    if (score === Plays.onePair) {
+        return Plays.threeOfAKind;
+    }
+
+    if (score === Plays.highCard) {
+        return Plays.onePair;
+    }
+
+    const jokerCount = hand.split('').filter((char) => char === 'J').length;
+    if (score === Plays.twoPairs) {
+        if (jokerCount === 1) {
+            return Plays.fullHouse;
+        } else if (jokerCount === 2) {
+            return Plays.fourOfAKind;
+        }
+    }
+
+    return score;
+}
 
 function mapHand(hand: string): string {
     let mapped = '';
