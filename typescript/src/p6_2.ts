@@ -8,7 +8,6 @@ type Race = {
 function run(filePath: string) {
     const data = fs.readFileSync(filePath, 'utf-8').trim();
     const race = parseData(data);
-    console.log(race);
 
     const tick = performance.now();
     const answer = numWaysToBeat(race);
