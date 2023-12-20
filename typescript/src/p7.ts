@@ -126,4 +126,5 @@ function calculateTotalWinnings(hands: Hand[]): number {
         return total + hand.bid * (index + 1);
     }, 0);
 }
+
 run('../data/p7/data.txt');
